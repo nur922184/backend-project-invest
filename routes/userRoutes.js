@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 
 // 👉 REGISTER
 router.post("/register", async (req, res) => {
@@ -11,20 +12,41 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "সব ফিল্ড পূরণ করুন" });
     }
 
+    // ✅ Phone validation
+    const phoneRegex = /^(01[3-9]\d{8}|\+8801[3-9]\d{8})$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({ message: "সঠিক ফোন নম্বর দিন" });
+    }
+
+    // ✅ Duplicate check
     const exist = await User.findOne({ phone });
     if (exist) {
       return res.status(400).json({ message: "এই নাম্বার আগে থেকেই আছে" });
     }
 
-    const myRefCode = "REF" + Math.floor(100000 + Math.random() * 900000);
+    // ✅ Referral validation (IMPORTANT)
+    if (referredBy) {
+      const refUser = await User.findOne({ refCode: referredBy });
+      if (!refUser) {
+        return res.status(400).json({ message: "অবৈধ রেফারেল কোড!" });
+      }
+    }
+
+    // 🔐 Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Use frontend refCode or generate
+    const myRefCode =
+      req.body.refCode ||
+      "REF" + Math.floor(100000 + Math.random() * 900000);
 
     const newUser = new User({
       name,
       phone,
-      password,
+      password: hashedPassword,
       refCode: myRefCode,
       referredBy: referredBy || null,
-      balance: 50,
+      balance: 50, // always backend controlled
     });
 
     await newUser.save();
@@ -40,13 +62,32 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.get("/all", async (req, res) => {
+
+// 👉 LOGIN (NO JWT)
+router.post("/login", async (req, res) => {
   try {
-    const users = await User.find().sort({ _id: -1 }); // latest first
+    const { phone, password } = req.body;
+
+    if (!phone || !password) {
+      return res.status(400).json({ message: "ফোন এবং পাসওয়ার্ড দিন" });
+    }
+
+    const user = await User.findOne({ phone });
+
+    if (!user) {
+      return res.status(400).json({ message: "ইউজার পাওয়া যায়নি" });
+    }
+
+    // 🔐 Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "ভুল পাসওয়ার্ড" });
+    }
 
     res.json({
-      total: users.length,
-      users,
+      message: "লগইন সফল হয়েছে! 🎉",
+      user,
     });
 
   } catch (err) {
@@ -54,24 +95,16 @@ router.get("/all", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-// 👉 LOGIN
-router.post("/login", async (req, res) => {
+
+
+// 👉 ALL USERS
+router.get("/all", async (req, res) => {
   try {
-    const { phone, password } = req.body;
-
-    const user = await User.findOne({ phone });
-
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
-    }
-
-    if (user.password !== password) {
-      return res.status(400).json({ message: "Wrong password" });
-    }
+    const users = await User.find().sort({ _id: -1 });
 
     res.json({
-      message: "Login successful ✅",
-      user,
+      total: users.length,
+      users,
     });
 
   } catch (err) {

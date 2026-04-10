@@ -61,3 +61,4 @@ build/Release
 .cache/
 npm-debug.log
 yarn-debug.log
+.vercel
