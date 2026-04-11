@@ -96,6 +96,52 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.put("/change-password", async (req, res) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+
+    if (!userId || !oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "সব তথ্য দিন"
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "ইউজার পাওয়া যায়নি"
+      });
+    }
+
+    // 🔑 Check old password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "পুরাতন পাসওয়ার্ড ভুল"
+      });
+    }
+
+    // 🔒 Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "সার্ভার সমস্যা হয়েছে"
+    });
+  }
+});
 
 // 👉 ALL USERS
 router.get("/all", async (req, res) => {

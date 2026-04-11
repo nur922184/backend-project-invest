@@ -15,7 +15,9 @@ const productRoutes = require("./routes/productRoutes");
 const investmentRoutes = require("./routes/investmentRoutes");
 const bonusRoutes = require("./routes/bonusRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
-// const withdrawalRoutes = require("./routes/withdrawalRoutes");
+const accountRoutes = require('./routes/accountRoutes');
+const withdrawalRoutes = require("./routes/withdrawalRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 // ✅ Use routes
 app.use("/api/users", userRoutes);
@@ -23,7 +25,9 @@ app.use("/api/products", productRoutes);
 app.use("/api/investments", investmentRoutes);
 app.use("/api/bonus", bonusRoutes);
 app.use("/api/transactions", transactionRoutes);
-// app.use("/api/withdrawals", withdrawalRoutes);
+app.use('/api/accounts', accountRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);                     
+app.use("/api/auth", authRoutes);                     
 
 // test route
 app.get("/", (req, res) => {
@@ -44,6 +48,9 @@ const startServer = async () => {
     await mongoose.connection.db.collection("investments").createIndex({ userId: 1 });
     await mongoose.connection.db.collection("transactions").createIndex({ userId: 1 });
     await mongoose.connection.db.collection("bonus").createIndex({ userId: 1 });
+    await mongoose.connection.db.collection("accounts").createIndex({ userId: 1 });
+    await mongoose.connection.db.collection("withdrawals").createIndex({ userId: 1 });
+    await mongoose.connection.db.collection("auth").createIndex({ userId: 1 });
     
     console.log("✅ Database indexes created");
 
