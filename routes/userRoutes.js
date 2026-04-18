@@ -143,6 +143,58 @@ router.put("/change-password", async (req, res) => {
   }
 });
 
+
+router.put("/admin/block-user/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "ইউজার পাওয়া যায়নি"
+      });
+    }
+
+    user.isBlocked = !user.isBlocked;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: user.isBlocked ? "ইউজার ব্লক করা হয়েছে" : "ইউজার আনব্লক করা হয়েছে"
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "অপারেশন ব্যর্থ"
+    });
+  }
+});
+
+router.delete("/admin/delete-user/:id", async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "ইউজার পাওয়া যায়নি"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "ইউজার ডিলিট করা হয়েছে"
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "ডিলিট ব্যর্থ"
+    });
+  }
+});
+
 // 👉 ALL USERS
 router.get("/all", async (req, res) => {
   try {

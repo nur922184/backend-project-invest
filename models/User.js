@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  isBlocked: {
+  type: Boolean,
+  default: false
+},
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);
