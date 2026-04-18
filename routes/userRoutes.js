@@ -195,6 +195,30 @@ router.delete("/admin/delete-user/:id", async (req, res) => {
   }
 });
 
+router.get("/admin/dashboard", async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const blockedUsers = await User.countDocuments({ isBlocked: true });
+    const activeUsers = await User.countDocuments({ isBlocked: false });
+
+    res.json({
+      success: true,
+      data: {
+        totalUsers,
+        blockedUsers,
+        activeUsers
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "ড্যাশবোর্ড লোড ব্যর্থ"
+    });
+  }
+});
+
+
 // 👉 ALL USERS
 router.get("/all", async (req, res) => {
   try {
