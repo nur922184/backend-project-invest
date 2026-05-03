@@ -19,7 +19,7 @@ router.post("/request", async (req, res) => {
       });
     }
 
-    // 🔍 user check
+    // ইউজার চেক
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -28,7 +28,7 @@ router.post("/request", async (req, res) => {
       });
     }
 
-    // 🔐 password check
+    // পাসওয়ার্ড চেক
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({
@@ -37,7 +37,7 @@ router.post("/request", async (req, res) => {
       });
     }
 
-    // 💳 account check
+    // অ্যাকাউন্ট চেক
     const account = await Account.findOne({
       _id: accountId,
       userId,
@@ -51,43 +51,64 @@ router.post("/request", async (req, res) => {
       });
     }
 
-    // 💸 balance check (assume user.balance আছে)
-    if (user.balance < amount) {
+    const withdrawAmount = Number(amount);
+    
+    // ✅ সার্ভিস চার্জ ক্যালকুলেশন (৫%)
+    const serviceCharge = withdrawAmount * 0.05;
+    const totalDeduction = withdrawAmount + serviceCharge;
+
+    // ✅ ব্যালেন্স চেক (মোট কাটার সাথে তুলনা করা হবে)
+    if (user.balance < totalDeduction) {
       return res.status(400).json({
         success: false,
-        message: "পর্যাপ্ত ব্যালেন্স নেই"
+        message: `পর্যাপ্ত ব্যালেন্স নেই। প্রয়োজন: ৳${totalDeduction.toFixed(2)} (উত্তোলন: ৳${withdrawAmount} + চার্জ: ৳${serviceCharge.toFixed(2)})`,
+        required: totalDeduction,
+        currentBalance: user.balance
       });
     }
 
-    // ➖ deduct balance
-    user.balance -= amount;
+    // ✅ ব্যালেন্স থেকে মোট টাকা কাটা হবে
+    user.balance -= totalDeduction;
     await user.save();
 
-    // 💾 save withdrawal
+    // ✅ উইথড্র রেকর্ড সেভ করা (সার্ভিস চার্জ সহ)
     const withdrawal = new Withdrawal({
       userId,
-      amount,
-      accountId,
+      amount: withdrawAmount,
+      serviceCharge: serviceCharge,
+      totalDeduction: totalDeduction,
+      accountId: account._id,
       accountNumber: account.accountNumber,
       accountType: account.accountType,
-      status: "pending"
+      accountHolder: account.holderName,
+      status: "pending",
+      remainingBalance: user.balance,
+      requestedAt: new Date()
     });
 
     await withdrawal.save();
 
     res.json({
       success: true,
-      message: "Withdraw request সফল হয়েছে"
+      message: "উত্তোলন রিকোয়েস্ট সফল হয়েছে",
+      data: {
+        withdrawAmount,
+        serviceCharge,
+        totalDeduction,
+        newBalance: user.balance,
+        withdrawalId: withdrawal._id
+      }
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Withdraw request error:", error);
     res.status(500).json({
       success: false,
-      message: "সার্ভার সমস্যা হয়েছে"
+      message: error.message || "সার্ভার সমস্যা হয়েছে"
     });
   }
 });
+
 
 router.get("/user/:userId", async (req, res) => {
   try {

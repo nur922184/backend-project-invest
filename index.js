@@ -18,7 +18,7 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const accountRoutes = require("./routes/accountRoutes");
 const withdrawalRoutes = require("./routes/withdrawalRoutes");
 const authRoutes = require("./routes/authRoutes");
-
+const CodebonusRoutes = require("./routes/CodebonusRoutes");
 // ================= USE ROUTES =================
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
@@ -28,6 +28,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/accounts", accountRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/bunos", CodebonusRoutes);
 
 // ================= TEST ROUTE =================
 app.get("/", (req, res) => {
