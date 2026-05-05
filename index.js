@@ -28,7 +28,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/accounts", accountRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/bunos", CodebonusRoutes);
+app.use("/api/bonus-code", CodebonusRoutes);
 
 // ================= TEST ROUTE =================
 app.get("/", (req, res) => {
